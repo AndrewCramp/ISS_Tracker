@@ -22,7 +22,7 @@ def getISSData():
 
 def getCityCoordinates():
     coordinates = np.array([0.0,0.0])
-    location = geocoder.forward('London', limit = 1)
+    location = geocoder.forward('Kingston,ON', limit = 1)
     location = location.json()
     coordinates[0] = location['features'][0]['center'][1]
     coordinates[1] = location['features'][0]['center'][0]
@@ -48,6 +48,8 @@ def lookAngle(cityLat, cityLong, satLat, satLong):
     gamma = math.acos(math.sin(satLat)*math.sin(cityLat)+math.cos(satLat)*math.cos(cityLat)*math.cos(satLong-cityLong))
     elevation = math.acos(math.sin(gamma)/(math.sqrt(1+math.pow(RADIUS_EARTH/ISS_ORBIT,2)-2*(RADIUS_EARTH/ISS_ORBIT)*math.cos(gamma))))
     elevation = elevation * 180/math.pi
+    if(gamma > math.acos(RADIUS_EARTH/ISS_ORBIT)):
+        elevation = elevation * -1
     alpha = math.asin(math.sin(math.fabs(cityLong-satLong))*math.cos(satLat)/math.sin(gamma))
     north = 0
     west = 0
