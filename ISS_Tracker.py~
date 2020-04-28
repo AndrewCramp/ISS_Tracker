@@ -22,7 +22,7 @@ def getISSData():
 
 def getCityCoordinates():
     coordinates = np.array([0.0,0.0])
-    location = geocoder.forward('Welland,ON', limit = 1)
+    location = geocoder.forward('Kingston,ON', limit = 1)
     location = location.json()
     coordinates[0] = location['features'][0]['center'][1]
     coordinates[1] = location['features'][0]['center'][0]
@@ -57,7 +57,7 @@ def lookAngle(cityLat, cityLong, satLat, satLong):
         west = 1
     x = (math.tan(cityLat)*math.cos(satLong-cityLong))
     y = math.tan(satLat)
-    if(x < y):
+    if(x < 7):
         north = 1
     azimuth = getAzimuth(LATITUDECORRECTION[north][west],alpha*180/math.pi)
     angle[0] = elevation
@@ -66,7 +66,6 @@ def lookAngle(cityLat, cityLong, satLat, satLong):
 
 
 def getAzimuth(sector, alpha):
-    print(sector)
     if(sector == "NW"):
         return 360-alpha
     elif(sector == "NE"):
@@ -77,21 +76,6 @@ def getAzimuth(sector, alpha):
         return 180 - alpha
 
 
-def getTLE():
-    data = requests.get('https://www.n2yo.com/rest/v1/satellite/tle/25544&apiKey=C3LD4X-SJY6XX-HDLDBW-4DIZ')
-    tle = [' ',' ']
-    temp = data.json()['tle'].split('\r\n')
-    print(temp)
-    tle[0] = temp[0]
-    tle[1] = temp[1]
-    inclination = float(tle[1][9:16])
-    ascendingNode = float(tle[1][18:25])
-    perigee = float(tle[1][35:42])
-    print(inclination)
-    print(ascendingNode)
-    print(perigee)
-
-
 ISSCoord = np.array([0.0,0.0])
 cityCoord = np.array([0.0,0.0])
 ISSCoord = getISSData()
@@ -99,4 +83,3 @@ cityCoord = getCityCoordinates()
 ISSCoord = ISSCoord*(math.pi/180)
 cityCoord = cityCoord*(math.pi/180)
 print(lookAngle(cityCoord[0],cityCoord[1],ISSCoord[0],ISSCoord[1]))
-getTLE()
