@@ -79,7 +79,6 @@ def lookAngle(cityLat, cityLong, satLat, satLong):
 
 
 def getAzimuth(sector, alpha):
-    print(sector)
     if(sector == "NW"):
         return 360-alpha
     elif(sector == "NE"):
@@ -116,7 +115,6 @@ def getMeanAnomaly(deltat):
     n = meanMotion
     M0 = epochAnomaly
     M =  M0 + 2*math.pi*(n*deltat-int(n*deltat)-int((M0+2*math.pi*(n*deltat-int(n*deltat)))/(2*math.pi)))
-    print("M: ",M*180.0/math.pi)
     return M
 def getEccentricAnomaly(M):
     iterations =5
@@ -135,7 +133,7 @@ def getEccentricAnomaly(M):
 def getTrueAnomaly(E):
     e = eccentricity
     ta =  math.acos((math.cos(E)-e)/(1-e*math.cos(E)))
-    return 2*math.pi-ta
+    return ta
 def getSemiMajorAxis():
     n = meanMotion
     return (2.97554e15/((2*math.pi*n)**2))**(1.0/3.0)
@@ -178,7 +176,6 @@ def getPerigeePrecession(a, deltat):
     a0 = -a1*(134*d1**3/81 + d1**2 +d1/3 -1)
     p0 = a0*(1-e**2)
     omega = perigee
-    print(perigee)
     return omega + 2*math.pi*(3*J2*Re**2*n*deltat*(5*math.cos(inclination)**2-1)/(4*p0**2))
 
 def getArgumentofLatitude(perigeeP, v):
@@ -196,58 +193,32 @@ def getGeocentricRA(RAdiff, asscendingNodeP):
 
 def getGeocentricDeclination(mu,RAdiff):
     x = -1 if(math.sin(mu) < 0) else 1
-    print(math.sin(mu))
-    print(x)
     return x*math.acos(math.cos(mu)/math.cos(RAdiff))
 
 def getFuturePosition():
-    deltat = getTimeFraction()-epochTime+0.00347222222
-    print(deltat)
-    print("time: ",getTimeFraction())
-    print("Mean anomaly at epoch: ",epochAnomaly*180/math.pi)
+    deltat = getTimeFraction()-epochTime
     meanAnomaly = getMeanAnomaly(deltat)
-    print("mean anomaly: ", meanAnomaly*180/math.pi)
     semiMajorAxis = 6796000
     E = getEccentricAnomaly(meanAnomaly)
-    print("Eccentric Anomaly: ",E*180/math.pi)
-    print("True anomaly: ",getTrueAnomaly(E)*180/math.pi)
     v = getTrueAnomaly(E)
-    print("semi: ", getSemiMajorAxis())
     a = getSemiMajorAxis()
-    print("perigee distance: ", getPerigeeDistance(a))
     p = getPerigeeDistance(a)
-    print("radius: ", getRadius(p,v))
-    print("RA: ", getRAPrecession(a, deltat)*180/math.pi)
     RAP = getRAPrecession(a, deltat)
-    print("pergee: ", getPerigeePrecession(a, deltat)*180/math.pi)
     perigeeP = getPerigeePrecession(a, deltat)
     mu = getArgumentofLatitude(perigeeP, v)
-    print("argument of Latitude: ", mu*180/math.pi)
-    print("ra diff: ", getRADifference(mu)*180/math.pi)
     RAdiff = getRADifference(mu)
     r = getRadius(p,v)
     alphag = getGeocentricRA(RAdiff, RAP)
     deltag = getGeocentricDeclination(mu,RAdiff)
-    print("GeocentricDeclination: ", deltag)
     X1 = a*(math.cos(E)-eccentricity)
     Y1 = a*(math.sqrt(1-eccentricity**2)*math.sin(E))
-   # x = math.cos(perigee) * X1 - math.sin(perigee) * Y1
-   # y = math.sin(perigee) * X1 + math.cos(perigee) * Y1
-   # z = math.sin(inclination) * x
-   # x = math.cos(inclination) * x
-   # xtemp = x
-   # x = math.cos(ascendingNode) * xtemp - math.sin(ascendingNode) * y
-   # y = math.sin(ascendingNode) * xtemp +math.cos(ascendingNode) * y
-    
     x = r*math.cos(alphag)*math.cos(deltag)
     y = r*math.sin(alphag)*math.cos(deltag)
     z = r*math.sin(deltag)
-
     latg = 42.99*math.pi/180
     longg = -79.24*math.pi/180
     siderealt = 211.25*math.pi/180
     rg =((math.cos(latg)/RADIUS_EARTH)**2+(math.sin(latg)/6356.72)**2)**(-1.0/2.0)
-    print(rg)
     xg = rg*math.cos(siderealt)*math.cos(latg)
     yg = rg*math.sin(siderealt)*math.cos(latg)
     zg = rg*math.sin(latg)
@@ -255,38 +226,9 @@ def getFuturePosition():
     ys = y-yg
     zs = z-zg
     rs = math.sqrt(xs**2+ys**2+zs**2)
-    print(x)
-    print(y)
-    print(z)
     r=math.sqrt(x**2+y**2+z**2)
-    print(r)
     lat = math.asin(z/r)
     lon = math.atan2(y, x)
-    if(lon < 0):
-        lon += 2*math.pi
-    print("LAT:")
-    print(lat*180/math.pi)
-    print(lon*180/math.pi)
-
-
-    coord1 = np.array([[X1],[Y1],[0.0]])
-    AzPerigee = np.array([[math.cos(perigee),math.sin(perigee),0.0],
-                          [-1.0*math.sin(perigee),math.cos(perigee),0.0],
-                          [0.0,0.0,1.0]])
-    AzAscending = np.array([[math.cos(ascendingNode),math.sin(ascendingNode),0.0],
-                          [-1.0*math.sin(ascendingNode),math.cos(ascendingNode),0.0],
-                          [0.0,0.0,1.0]])
-
-
-    Ax = np.array([[1.0,0.0,0.0],
-                   [0.0,math.cos(inclination),math.sin(inclination)],
-                   [0.0,-1.0*math.sin(inclination),math.cos(inclination)]])
-    temp1 = AzAscending.transpose().dot(Ax.transpose()).dot(AzPerigee.transpose())
-    cartesian = temp1.dot(coord1)
-    r= math.sqrt(cartesian[0]**2+cartesian[1]**2+cartesian[2]**2)
-    v = math.acos((math.cos(E)-eccentricity)/(1-eccentricity*math.cos(E)))
-    lat = math.asin(cartesian[2]/r)
-    lon = math.atan2(cartesian[1], cartesian[0])
     if(lon < 0):
         lon += 2*math.pi
     print("LAT:")
@@ -312,7 +254,6 @@ def getLMST():
     GMST = 24110.54841+8640184.812866*T+0.093104*T**2-0.0000062*T**3
     GMST = GMST*0.000277778
     LMST = GMST + 280.76
-    print(GMST)
 
 def plotLat():
     j = 0
