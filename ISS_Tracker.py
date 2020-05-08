@@ -5,6 +5,9 @@ import numpy as np
 import datetime as dt
 import matplotlib.pyplot as plta
 import julian as j
+import pytz
+
+utc = pytz.utc
 RADIUS_EARTH = 6378
 ISS_ORBIT = 408+RADIUS_EARTH
 semiMajorAxis = 6796000
@@ -133,6 +136,7 @@ def getEccentricAnomaly(M):
 def getTrueAnomaly(E):
     e = eccentricity
     ta =  math.acos((math.cos(E)-e)/(1-e*math.cos(E)))
+    ta = ta if(abs(ta-E) < 3) else 2*math.pi -ta
     return ta
 def getSemiMajorAxis():
     n = meanMotion
@@ -198,7 +202,6 @@ def getGeocentricDeclination(mu,RAdiff):
 def getFuturePosition():
     deltat = getTimeFraction()-epochTime
     meanAnomaly = getMeanAnomaly(deltat)
-    semiMajorAxis = 6796000
     E = getEccentricAnomaly(meanAnomaly)
     v = getTrueAnomaly(E)
     a = getSemiMajorAxis()
@@ -215,45 +218,45 @@ def getFuturePosition():
     x = r*math.cos(alphag)*math.cos(deltag)
     y = r*math.sin(alphag)*math.cos(deltag)
     z = r*math.sin(deltag)
-    latg = 42.99*math.pi/180
-    longg = -79.24*math.pi/180
-    siderealt = 211.25*math.pi/180
-    rg =((math.cos(latg)/RADIUS_EARTH)**2+(math.sin(latg)/6356.72)**2)**(-1.0/2.0)
-    xg = rg*math.cos(siderealt)*math.cos(latg)
-    yg = rg*math.sin(siderealt)*math.cos(latg)
-    zg = rg*math.sin(latg)
-    xs = x-xg
-    ys = y-yg
-    zs = z-zg
-    rs = math.sqrt(xs**2+ys**2+zs**2)
     r=math.sqrt(x**2+y**2+z**2)
     lat = math.asin(z/r)
-    lon = math.atan2(y, x)
+    lon = math.atan2(y, x)*180.00/math.pi
+    print(lon)
+    adjustment = getGMST()*15
     if(lon < 0):
-        lon += 2*math.pi
+        lon += 360
+    lon = lon - adjustment
     print("LAT:")
     print(lat*180/math.pi)
-    print(lon*180/math.pi)
+    print(lon)
 
 def getTimeFraction():
-    currentDT = dt.datetime.now()
+    currentDT = dt.datetime.now(utc)
     month = currentDT.month
     days = 0 
     for i in range(month-1):
         days = days + daysInMonth[i]
     days = days + currentDT.day
-    seconds = (currentDT.hour+4)*60*60
+    seconds = (currentDT.hour)*60*60
     seconds = seconds + currentDT.minute*60
     seconds = seconds + currentDT.second
     fraction = seconds/86400
     return days+fraction
 
-def getLMST():
-    jd = j.to_jd(dt.datetime.now())-2451545
-    T = jd/36525.0
-    GMST = 24110.54841+8640184.812866*T+0.093104*T**2-0.0000062*T**3
-    GMST = GMST*0.000277778
-    LMST = GMST + 280.76
+def getGMST():
+    jd = j.to_jd(dt.datetime.now(utc), fmt='jd')
+    midnight = math.floor(jd)+0.5
+    daysSinceMidnight = jd - midnight
+    hoursSinceMidnight = daysSinceMidnight*24
+    daysSinceEpoch = jd - 2451545
+    centuriesSinceEpoch = daysSinceEpoch / 36525
+    wholeDaysSinceEpoch = midnight - 2451545.0
+    GMST = (6.697374558
+    + 0.06570982441908 * wholeDaysSinceEpoch
+    + 1.00273790935 * hoursSinceMidnight
+    + 0.000026 * centuriesSinceEpoch**2)
+    hours = GMST%24
+    return hours
 
 def plotLat():
     j = 0
@@ -326,4 +329,4 @@ cityCoord = cityCoord*(math.pi/180)
 getTLE()
 print(lookAngle(cityCoord[0],cityCoord[1],ISSCoord[0],ISSCoord[1]))
 getFuturePosition()
-getLMST()
+getGMST()
