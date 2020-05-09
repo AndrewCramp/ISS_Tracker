@@ -6,6 +6,8 @@ import datetime as dt
 import matplotlib.pyplot as plta
 import julian as j
 import pytz
+from flask import Flask, render_template,request
+
 
 utc = pytz.utc
 RADIUS_EARTH = 6378
@@ -200,6 +202,7 @@ def getGeocentricDeclination(mu,RAdiff):
     return x*math.acos(math.cos(mu)/math.cos(RAdiff))
 
 def getFuturePosition():
+    
     deltat = getTimeFraction()-epochTime
     meanAnomaly = getMeanAnomaly(deltat)
     E = getEccentricAnomaly(meanAnomaly)
@@ -226,9 +229,8 @@ def getFuturePosition():
     if(lon < 0):
         lon += 360
     lon = lon - adjustment
-    print("LAT:")
-    print(lat*180/math.pi)
-    print(lon)
+    pos = [lat*180/math.pi, lon]
+    return pos
 
 def getTimeFraction():
     currentDT = dt.datetime.now(utc)
@@ -319,14 +321,32 @@ def plotLat():
     plt.plot(xAxis, yAxis2)
     plt.show()
 
-        
-ISSCoord = np.array([0.0,0.0])
-cityCoord = np.array([0.0,0.0])
-ISSCoord = getISSData()
-cityCoord = getCityCoordinates()
-ISSCoord = ISSCoord*(math.pi/180)
-cityCoord = cityCoord*(math.pi/180)
-getTLE()
-print(lookAngle(cityCoord[0],cityCoord[1],ISSCoord[0],ISSCoord[1]))
-getFuturePosition()
-getGMST()
+app = Flask(__name__)
+@app.route("/", methods = ["GET","POST"])
+def home():
+    elevation = 0
+    azimuth = 0
+    lAngle = 0
+    ISSCoord = np.array([0.0,0.0])
+    cityCoord = [0.0,0.0]
+    ISSCoord = getISSData()
+    ISSCoord = ISSCoord*(math.pi/180)
+    getTLE()
+    location = getFuturePosition()
+    latitude = location[0]
+    longitude = location[1]
+    if request.method == "POST":
+        print("adf")
+        cityCoord = [float(request.form["latitude"])*math.pi/180, float(request.form["longitude"])*math.pi/180]
+        print("asdf")
+        lAngle = lookAngle(cityCoord[0],cityCoord[1],ISSCoord[0],ISSCoord[1])
+        print("1345")
+        elevation = lAngle[0]
+        azimuth = lAngle[1]
+        print(elevation)
+    return render_template("index.html", elev = elevation, az = azimuth, lat = latitude, lon = longitude, latg = cityCoord[0]*180/math.pi, longg = cityCoord[1]*180/math.pi)
+@app.route("/<name>")
+def user(name):
+    return f"Hello {name}!"
+if (__name__ == "__main__"):
+    app.run()
