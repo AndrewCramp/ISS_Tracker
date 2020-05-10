@@ -1,5 +1,7 @@
 <html>
 		<head>
+				<script src='https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.js'></script>
+				<link href='https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.css' rel='stylesheet' />
 				<title>ISS Tracker</title>
 		</head>
 		<body>
@@ -14,5 +16,41 @@
 				<h2>ISS Longitude: {{lon}}</h2>
 				<h2>Elevation: {{elev}}</h2>
 				<h2>Azimuth: {{az}}</h2>
+				<h1>{{coords[0]}}</h1>
+				<div id='map' style='width: 400px; height: 300px;'></div> 
+				<script> 
+						console.log({{coords[0][1]}})
+						mapboxgl.accessToken = 'pk.eyJ1IjoiYW5kcmV3Y3JhbXAiLCJhIjoiY2pvdmw4NzhoMThhczNrbzR4d2x0bGVhdyJ9.sc2tMk0EWnPkeCJWALbQ0g'; 
+						var map = new mapboxgl.Map({
+								container: 'map',
+								style: 'mapbox://styles/mapbox/streets-v11' 
+						}); 
+						map.on('load', function() { 
+								map.addSource('route', {
+										'type': 'geojson',
+										'data': {
+												'type': 'Feature',
+												'properties': {},
+												'geometry': {
+														'type': 'LineString',
+														'coordinates': {{coords}}
+												}
+										}
+								});
+								map.addLayer({
+										'id': 'route',
+										'type': 'line',
+										'source': 'route',
+										'layout': {
+												'line-join': 'round',
+												'line-cap': 'round' 
+										},
+										'paint': { 
+												'line-color': '#888',
+												'line-width': 8 
+										} 
+								});
+						});
+				</script>
 		</body>
 </html>

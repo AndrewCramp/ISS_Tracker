@@ -1,3 +1,4 @@
+import json
 import requests
 import math
 import mapbox
@@ -7,7 +8,8 @@ import matplotlib.pyplot as plta
 import julian as j
 import pytz
 from flask import Flask, render_template,request
-
+import polyline as pl
+import pandas as pd
 
 utc = pytz.utc
 RADIUS_EARTH = 6378
@@ -32,6 +34,7 @@ def getISSData():
         print("Success\n")
     else:
         print("failure\n")
+    print(data)
     data = data.json()
     coordinates[0] = data["iss_position"]["latitude"]
     coordinates[1] = data["iss_position"]["longitude"]
@@ -138,8 +141,11 @@ def getEccentricAnomaly(M):
 def getTrueAnomaly(E):
     e = eccentricity
     ta =  math.acos((math.cos(E)-e)/(1-e*math.cos(E)))
-    ta = ta if(abs(ta-E) < 3) else 2*math.pi -ta
-    return ta
+    ta2 = 2*math.pi-ta
+    if(abs(ta2-E) > abs(ta-E)):
+        return ta
+    else:
+        return ta2
 def getSemiMajorAxis():
     n = meanMotion
     return (2.97554e15/((2*math.pi*n)**2))**(1.0/3.0)
@@ -189,10 +195,11 @@ def getArgumentofLatitude(perigeeP, v):
 
 def getRADifference(mu):
     i = inclination
-    if(0<i and i < math.pi/2 and 0 < mu and mu <math.pi):
+    if(0<i and i < math.pi/2 and 0 < mu and mu <math.pi or math.pi/2 < i and i < math.pi and math.pi < mu and mu < math.pi*2):
         return math.acos(math.cos(mu)/(1-math.sin(i)**2*math.sin(mu)**2)**0.5)
     else:
         return 2*math.pi - math.acos(math.cos(mu)/(1-math.sin(i)**2*math.sin(mu)**2)**0.5)
+
 def getGeocentricRA(RAdiff, asscendingNodeP):
     omega = asscendingNodeP
     return RAdiff + omega - 2*math.pi*(int(RAdiff+omega/(2*math.pi)))
@@ -201,9 +208,9 @@ def getGeocentricDeclination(mu,RAdiff):
     x = -1 if(math.sin(mu) < 0) else 1
     return x*math.acos(math.cos(mu)/math.cos(RAdiff))
 
-def getFuturePosition():
-    
-    deltat = getTimeFraction()-epochTime
+def getFuturePosition(hours):
+    days = hours/24
+    deltat = getTimeFraction()-epochTime+days
     meanAnomaly = getMeanAnomaly(deltat)
     E = getEccentricAnomaly(meanAnomaly)
     v = getTrueAnomaly(E)
@@ -224,13 +231,23 @@ def getFuturePosition():
     r=math.sqrt(x**2+y**2+z**2)
     lat = math.asin(z/r)
     lon = math.atan2(y, x)*180.00/math.pi
-    print(lon)
-    adjustment = getGMST()*15
-    if(lon < 0):
-        lon += 360
+    adjustment = getGMST(hours)*15
     lon = lon - adjustment
+    while(lon < 0):
+        lon = lon + 360
+    #print(lon)
     pos = [lat*180/math.pi, lon]
     return pos
+
+def plotLine():
+    line = np.zeros([2400,2],dtype=np.float32)
+    for i in range(2400):
+        temp = getFuturePosition(i*8.33e-4)
+        line[i][1] = float(temp[0])
+        line[i][0] = float(temp[1])
+    return (json.loads(pd.DataFrame(line).to_json(orient='split'))['data'])
+    
+    
 
 def getTimeFraction():
     currentDT = dt.datetime.now(utc)
@@ -245,7 +262,7 @@ def getTimeFraction():
     fraction = seconds/86400
     return days+fraction
 
-def getGMST():
+def getGMST(deltat):
     jd = j.to_jd(dt.datetime.now(utc), fmt='jd')
     midnight = math.floor(jd)+0.5
     daysSinceMidnight = jd - midnight
@@ -258,7 +275,7 @@ def getGMST():
     + 1.00273790935 * hoursSinceMidnight
     + 0.000026 * centuriesSinceEpoch**2)
     hours = GMST%24
-    return hours
+    return hours+deltat
 
 def plotLat():
     j = 0
@@ -332,19 +349,16 @@ def home():
     ISSCoord = getISSData()
     ISSCoord = ISSCoord*(math.pi/180)
     getTLE()
-    location = getFuturePosition()
+    location = getFuturePosition(0)
     latitude = location[0]
     longitude = location[1]
+    coordinates = plotLine()
     if request.method == "POST":
-        print("adf")
         cityCoord = [float(request.form["latitude"])*math.pi/180, float(request.form["longitude"])*math.pi/180]
-        print("asdf")
         lAngle = lookAngle(cityCoord[0],cityCoord[1],ISSCoord[0],ISSCoord[1])
-        print("1345")
         elevation = lAngle[0]
         azimuth = lAngle[1]
-        print(elevation)
-    return render_template("index.html", elev = elevation, az = azimuth, lat = latitude, lon = longitude, latg = cityCoord[0]*180/math.pi, longg = cityCoord[1]*180/math.pi)
+    return render_template("index.html", elev = elevation, az = azimuth, lat = latitude, lon = longitude, latg = cityCoord[0]*180/math.pi, longg = cityCoord[1]*180/math.pi, coords = coordinates)
 @app.route("/<name>")
 def user(name):
     return f"Hello {name}!"
