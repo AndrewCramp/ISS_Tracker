@@ -10,7 +10,8 @@ import pytz
 from flask import Flask, render_template,request
 import polyline as pl
 import pandas as pd
-
+coordinates = 0
+coordinates2 = 0
 utc = pytz.utc
 RADIUS_EARTH = 6378
 ISS_ORBIT = 408+RADIUS_EARTH
@@ -240,12 +241,34 @@ def getFuturePosition(hours):
     return pos
 
 def plotLine():
-    line = np.zeros([2400,2],dtype=np.float32)
-    for i in range(2400):
+    global coordinates
+    global coordinates2
+    lat = []
+    lon = []
+    lat2 = []
+    lon2 = []
+    switch = 0
+    tempp = 5000
+    for i in range(1800):
         temp = getFuturePosition(i*8.33e-4)
-        line[i][1] = float(temp[0])
-        line[i][0] = float(temp[1])
-    return (json.loads(pd.DataFrame(line).to_json(orient='split'))['data'])
+        if abs(temp[1] - tempp) > 15 and tempp != 5000:
+            switch = 1
+        if switch == 0:
+            lat.append(float(temp[0]))
+            lon.append(float(temp[1]))
+            print(abs(temp[1] - tempp))
+            tempp = temp[1]
+        else:
+            lat2.append(float(temp[0]))
+            lon2.append(float(temp[1]))
+    lonArray = np.array(lon)
+    latArray = np.array(lat)
+    lon2Array = np.array(lon2)
+    lat2Array = np.array(lat2)
+    line = np.column_stack([lonArray, latArray])
+    line2 = np.column_stack([lon2Array, lat2Array])
+    coordinates = (json.loads(pd.DataFrame(line).to_json(orient='split'))['data']) 
+    coordinates2 = (json.loads(pd.DataFrame(line2).to_json(orient='split'))['data']) 
     
     
 
@@ -352,13 +375,13 @@ def home():
     location = getFuturePosition(0)
     latitude = location[0]
     longitude = location[1]
-    coordinates = plotLine()
+    plotLine()
     if request.method == "POST":
         cityCoord = [float(request.form["latitude"])*math.pi/180, float(request.form["longitude"])*math.pi/180]
         lAngle = lookAngle(cityCoord[0],cityCoord[1],ISSCoord[0],ISSCoord[1])
         elevation = lAngle[0]
         azimuth = lAngle[1]
-    return render_template("index.html", elev = elevation, az = azimuth, lat = latitude, lon = longitude, latg = cityCoord[0]*180/math.pi, longg = cityCoord[1]*180/math.pi, coords = coordinates)
+    return render_template("index.html", elev = elevation, az = azimuth, lat = latitude, lon = longitude, latg = cityCoord[0]*180/math.pi, longg = cityCoord[1]*180/math.pi, coords = coordinates,coords2 = coordinates2)
 @app.route("/<name>")
 def user(name):
     return f"Hello {name}!"

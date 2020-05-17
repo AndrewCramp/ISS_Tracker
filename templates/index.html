@@ -17,15 +17,46 @@
 				<h2>Elevation: {{elev}}</h2>
 				<h2>Azimuth: {{az}}</h2>
 				<h1>{{coords[0]}}</h1>
-				<div id='map' style='width: 400px; height: 300px;'></div> 
-				<script> 
+				<div id='map' style='width: 800px; height: 600px;'></div>
+				<script>
 						console.log({{coords[0][1]}})
-						mapboxgl.accessToken = 'pk.eyJ1IjoiYW5kcmV3Y3JhbXAiLCJhIjoiY2pvdmw4NzhoMThhczNrbzR4d2x0bGVhdyJ9.sc2tMk0EWnPkeCJWALbQ0g'; 
+						mapboxgl.accessToken = 'pk.eyJ1IjoiYW5kcmV3Y3JhbXAiLCJhIjoiY2pvdmw4NzhoMThhczNrbzR4d2x0bGVhdyJ9.sc2tMk0EWnPkeCJWALbQ0g';
 						var map = new mapboxgl.Map({
 								container: 'map',
-								style: 'mapbox://styles/mapbox/streets-v11' 
-						}); 
-						map.on('load', function() { 
+								style: 'mapbox://styles/mapbox/dark-v10',
+								center: [0, 0],
+								zoom: -10
+						});
+						map.on('load', function() {
+							map.loadImage("https://i.imgur.com/rLUothC.png", function(error, image) {
+								if (error) throw error;
+								map.addImage("custom-marker", image);
+								/* Style layer: A style layer ties together the source and image and specifies how they are displayed on the map. */
+								map.addLayer({
+									id: "markers",
+									type: "symbol",
+									/* Source: A data source specifies the geographic coordinate where the image marker gets placed. */
+									source: {
+									type: "geojson",
+									data: {
+									type: 'FeatureCollection',
+									features: [
+									{
+									type: 'Feature',
+									properties: {},
+									geometry: {
+									type: "Point",
+									coordinates: [{{lon}}, {{lat}}]
+									}
+									}
+									]
+									}
+									},
+									layout: {
+									"icon-image": "custom-marker",
+									}
+									});
+								});
 								map.addSource('route', {
 										'type': 'geojson',
 										'data': {
@@ -37,18 +68,42 @@
 												}
 										}
 								});
+								map.addSource('route2', {
+										'type': 'geojson',
+										'data': {
+												'type': 'Feature',
+												'properties': {},
+												'geometry': {
+														'type': 'LineString',
+														'coordinates': {{coords2}}
+												}
+										}
+								});
 								map.addLayer({
 										'id': 'route',
 										'type': 'line',
 										'source': 'route',
 										'layout': {
 												'line-join': 'round',
-												'line-cap': 'round' 
+												'line-cap': 'round'
 										},
-										'paint': { 
+										'paint': {
 												'line-color': '#888',
-												'line-width': 8 
-										} 
+												'line-width': 2
+										}
+								});
+								map.addLayer({
+										'id': 'route2',
+										'type': 'line',
+										'source': 'route2',
+										'layout': {
+												'line-join': 'round',
+												'line-cap': 'round'
+										},
+										'paint': {
+												'line-color': '#888',
+												'line-width': 2
+										}
 								});
 						});
 				</script>
