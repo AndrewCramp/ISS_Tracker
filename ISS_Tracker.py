@@ -61,7 +61,7 @@ def calculateElevationAngle(diffVector, earthVector):
     angle = math.acos(np.dot(earthVector,diffVector)/(np.linalg.norm(diffVector)*np.linalg.norm(earthVector)))
 
 def lookAngle(cityLat, cityLong, satLat, satLong):
-    a = getSemiMajorAxis()
+    a = 6731.230
     angle = np.array([0.0,0.0])
     gamma = math.acos(math.sin(satLat)*math.sin(cityLat)+math.cos(satLat)*math.cos(cityLat)*math.cos(satLong-cityLong))
     elevation = math.acos(math.sin(gamma)/(math.sqrt(1+math.pow(RADIUS_EARTH/a,2)-2.000*(RADIUS_EARTH/a)*math.cos(gamma))))
@@ -390,17 +390,14 @@ def update():
     cityCoord = [0.0,0.0]
     ISSCoord = getISSData()
     ISSCoord = ISSCoord*(math.pi/180)
-    getTLE()
-    location = getFuturePosition(0)
-    latitude = location[0]
-    longitude = location[1]
-    plotLine()
-    
+    latitude = ISSCoord[0]*180/math.pi
+    longitude = ISSCoord[1]*180/math.pi
     cityCoord = [observeLat,observeLon]
     lAngle = lookAngle(cityCoord[0],cityCoord[1],ISSCoord[0],ISSCoord[1])
     elevation = lAngle[0]
     azimuth = lAngle[1]
-    return jsonify(elev = round(elevation,5), az = round(azimuth,5), lat = round(latitude,5), lon = round(longitude,5), latg = round(cityCoord[0]*180/math.pi,5), longg = round(cityCoord[1]*180/math.pi,5), coords = coordinates,coords2 = coordinates2, inclination = round(inclination*180/math.pi,5), perigee = round(perigee*180/math.pi,5), eccentricity = round(eccentricity,5))
+    print(lAngle)
+    return jsonify(elev = round(elevation,5), az = round(azimuth,5), lat = round(latitude,5), lon = round(longitude,5), latg = round(cityCoord[0]*180/math.pi,5), longg = round(cityCoord[1]*180/math.pi,5))
 
 if (__name__ == "__main__"):
     app.run()

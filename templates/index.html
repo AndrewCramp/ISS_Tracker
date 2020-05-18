@@ -10,7 +10,7 @@
 				<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script> <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 		<script>
 				function update_values() {
-						console.log("adsfasdf");
+
 						$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 						$.getJSON($SCRIPT_ROOT+"/Update",
 								function(data) {
@@ -19,15 +19,15 @@
 										$("#lon").text(data.lon)
 										$("#elev").text(data.elev)
 										$("#az").text(data.az)
-										console.log(data);
-							});         
+
+							});
 				}
-				setInterval(update_values, 3000);
+				setInterval(update_values, 500);
 		</script>
 				<div class = "container">
 						<div class = "row">
 								<div class = "col-lg-">
-										<form action = "#" method = "post">
+										<form action = "" method = "post">
 										<label>Latitude</label>
 										<input type ="text" id = "latitude" class = "form-control" name = "latitude" value = {{latg}}><br>
 										<label>Latitude</label>
@@ -76,7 +76,7 @@
 								<div class = "col">
 									<div id='map' style='width: 600px; height: 400px;'></div>
 											<script>
-												console.log({{coords[0][1]}})
+												var url = 'http://127.0.0.1:5000/Update';
 												mapboxgl.accessToken = 'pk.eyJ1IjoiYW5kcmV3Y3JhbXAiLCJhIjoiY2pvdmw4NzhoMThhczNrbzR4d2x0bGVhdyJ9.sc2tMk0EWnPkeCJWALbQ0g';
 												var map = new mapboxgl.Map({
 														container: 'map',
@@ -191,6 +191,31 @@
 												'line-width': 2
 										}
 								});
+								var request = new XMLHttpRequest();
+								var x = 3412343;
+								alert(x);
+								console.log("")
+								window.setInterval(function(){
+									request.open('GET',url,true);
+									request.onload = function (){
+										if(this.status >= 200 && this.status < 400){
+											var json = JSON.parse(this.response);
+											console.log("jlkjljldjfladsjf");
+											map.getSource('markers').setData({				type: 'FeatureCollection',
+															features: [
+															{
+															type: 'Feature',
+															properties: {},
+															geometry: {
+															type: "Point",
+															coordinates: [json.lon, json.lat]
+															}
+													}
+												]});
+										}
+									}
+									request.send();
+								},10000)
 						});
 		</script>
 								</div>
