@@ -7,7 +7,7 @@ import datetime as dt
 import matplotlib.pyplot as plta
 import julian as j
 import pytz
-from flask import Flask, render_template,request
+from flask import Flask, render_template,request,jsonify
 import polyline as pl
 import pandas as pd
 coordinates = 0
@@ -24,6 +24,8 @@ epochTime = 0.0
 epochAnomaly = 0.0
 meanMotion = 0.0
 daysInMonth = [31, 29, 31, 30, 31, 30, 31, 31,  30, 31, 30, 31]
+observeLat = 0
+observeLon = 0
 
 
 LATITUDECORRECTION = [["SE","SW"],
@@ -31,11 +33,6 @@ LATITUDECORRECTION = [["SE","SW"],
 def getISSData():
     coordinates = np.array([0.0,0.0])
     data = requests.get('http://api.open-notify.org/iss-now.json')
-    if data.status_code == requests.codes.ok:
-        print("Success\n")
-    else:
-        print("failure\n")
-    print(data)
     data = data.json()
     coordinates[0] = data["iss_position"]["latitude"]
     coordinates[1] = data["iss_position"]["longitude"]
@@ -62,7 +59,6 @@ def getDifferenceVector(observerVector, ISSVector):
 def calculateElevationAngle(diffVector, earthVector):
 
     angle = math.acos(np.dot(earthVector,diffVector)/(np.linalg.norm(diffVector)*np.linalg.norm(earthVector)))
-    print(angle)
 
 def lookAngle(cityLat, cityLong, satLat, satLong):
     a = getSemiMajorAxis()
@@ -109,7 +105,6 @@ def getTLE():
     data = requests.get('https://www.n2yo.com/rest/v1/satellite/tle/25544&apiKey=C3LD4X-SJY6XX-HDLDBW-4DIZ')
     tle = [' ',' ']
     temp = data.json()['tle'].split('\r\n')
-    print(temp)
     tle[0] = temp[0]
     tle[1] = temp[1]
     inclination = float(tle[1][9:16])*math.pi/180.0
@@ -236,7 +231,6 @@ def getFuturePosition(hours):
     lon = lon - adjustment
     while(lon < 0):
         lon = lon + 360
-    #print(lon)
     pos = [lat*180/math.pi, lon]
     return pos
 
@@ -256,7 +250,6 @@ def plotLine():
         if switch == 0:
             lat.append(float(temp[0]))
             lon.append(float(temp[1]))
-            print(abs(temp[1] - tempp))
             tempp = temp[1]
         else:
             lat2.append(float(temp[0]))
@@ -364,6 +357,8 @@ def plotLat():
 app = Flask(__name__)
 @app.route("/", methods = ["GET","POST"])
 def home():
+    global observLat
+    global observeLon
     elevation = 0
     azimuth = 0
     lAngle = 0
@@ -378,12 +373,34 @@ def home():
     plotLine()
     if request.method == "POST":
         cityCoord = [float(request.form["latitude"])*math.pi/180, float(request.form["longitude"])*math.pi/180]
+        observeLat = float(request.form["latitude"])*math.pi/180
+        observeLon = float(request.form["longitude"])*math.pi/180
         lAngle = lookAngle(cityCoord[0],cityCoord[1],ISSCoord[0],ISSCoord[1])
         elevation = lAngle[0]
         azimuth = lAngle[1]
-    return render_template("index.html", elev = elevation, az = azimuth, lat = latitude, lon = longitude, latg = cityCoord[0]*180/math.pi, longg = cityCoord[1]*180/math.pi, coords = coordinates,coords2 = coordinates2)
-@app.route("/<name>")
-def user(name):
-    return f"Hello {name}!"
+    return render_template("index.html", elev = round(elevation,5), az = round(azimuth,5), lat = round(latitude,5), lon = round(longitude,5), latg = round(cityCoord[0]*180/math.pi,5), longg = round(cityCoord[1]*180/math.pi,5), coords = coordinates,coords2 = coordinates2, inclination = round(inclination*180/math.pi,5), perigee = round(perigee*180/math.pi,5), eccentricity = round(eccentricity,5))
+
+
+@app.route("/Update", methods = ["Get","POST"])
+def update():
+    elevation = 0
+    azimuth = 0
+    lAngle = 0
+    ISSCoord = np.array([0.0,0.0])
+    cityCoord = [0.0,0.0]
+    ISSCoord = getISSData()
+    ISSCoord = ISSCoord*(math.pi/180)
+    getTLE()
+    location = getFuturePosition(0)
+    latitude = location[0]
+    longitude = location[1]
+    plotLine()
+    
+    cityCoord = [observeLat,observeLon]
+    lAngle = lookAngle(cityCoord[0],cityCoord[1],ISSCoord[0],ISSCoord[1])
+    elevation = lAngle[0]
+    azimuth = lAngle[1]
+    return jsonify(elev = round(elevation,5), az = round(azimuth,5), lat = round(latitude,5), lon = round(longitude,5), latg = round(cityCoord[0]*180/math.pi,5), longg = round(cityCoord[1]*180/math.pi,5), coords = coordinates,coords2 = coordinates2, inclination = round(inclination*180/math.pi,5), perigee = round(perigee*180/math.pi,5), eccentricity = round(eccentricity,5))
+
 if (__name__ == "__main__"):
     app.run()

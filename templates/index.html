@@ -1,59 +1,145 @@
 <html>
 		<head>
+
+				<link href="https://stackpath.bootstrapcdn.com/bootswatch/4.5.0/darkly/bootstrap.min.css" rel="stylesheet" integrity="sha384-Bo21yfmmZuXwcN/9vKrA5jPUMhr7znVBBeLxT9MA4r2BchhusfJ6+n8TLGUcRAtL" crossorigin="anonymous">
 				<script src='https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.js'></script>
 				<link href='https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.css' rel='stylesheet' />
 				<title>ISS Tracker</title>
 		</head>
 		<body>
-				<form action = "#" method = "post">
-						<h2>Latitude:</h2>
-						<input type ="text" id = "latitude" name = "latitude" value = {{latg}}><br>
-						<h2>Longitude</h2>
-						<input type ="text" id = "longitude" name = "longitude" value = {{longg}}><br>
-						<input type ="submit" value = "Submit">
-				</form>
-				<h2>ISS Latitude: {{lat}}</h2>
-				<h2>ISS Longitude: {{lon}}</h2>
-				<h2>Elevation: {{elev}}</h2>
-				<h2>Azimuth: {{az}}</h2>
-				<h1>{{coords[0]}}</h1>
-				<div id='map' style='width: 800px; height: 600px;'></div>
-				<script>
-						console.log({{coords[0][1]}})
-						mapboxgl.accessToken = 'pk.eyJ1IjoiYW5kcmV3Y3JhbXAiLCJhIjoiY2pvdmw4NzhoMThhczNrbzR4d2x0bGVhdyJ9.sc2tMk0EWnPkeCJWALbQ0g';
-						var map = new mapboxgl.Map({
-								container: 'map',
-								style: 'mapbox://styles/mapbox/dark-v10',
-								center: [0, 0],
-								zoom: -10
-						});
-						map.on('load', function() {
-							map.loadImage("https://i.imgur.com/rLUothC.png", function(error, image) {
-								if (error) throw error;
-								map.addImage("custom-marker", image);
+				<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script> <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+		<script>
+				function update_values() {
+						console.log("adsfasdf");
+						$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+						$.getJSON($SCRIPT_ROOT+"/Update",
+								function(data) {
+										console.log("fdsafdsaf;");
+										$("#lat").text(data.lat)
+										$("#lon").text(data.lon)
+										$("#elev").text(data.elev)
+										$("#az").text(data.az)
+										console.log(data);
+							});         
+				}
+				setInterval(update_values, 3000);
+		</script>
+				<div class = "container">
+						<div class = "row">
+								<div class = "col-lg-">
+										<form action = "#" method = "post">
+										<label>Latitude</label>
+										<input type ="text" id = "latitude" class = "form-control" name = "latitude" value = {{latg}}><br>
+										<label>Latitude</label>
+										<input type ="text" id = "longitude" name = "longitude" class = "form-control" value = {{longg}}><br>
+										<input type ="submit" class = "btn btn-primary" value = "Submit">
+										</form>
+								</div>
+								<div class = "col">
+										<table class ="table table-sm table-striped">
+												<thead>
+														<tr>
+														</tr>
+												</thead>
+												<tbody>
+														<tr>
+																<th scope = "row">Satellite Latitude</th>
+																<td id = 'lat'>{{lat}}</td>
+														</tr>
+														<tr>
+																<th scope = "row">Satellite Longitude</th>
+																<td id = lon>{{lon}}</td>
+														</tr>
+														<tr>
+																<th scope = "row">Elevation</th>
+																<td id = elev>{{elev}}</td>
+														</tr>
+														<tr>
+																<th scope = "row">Azimuth</th>
+																<td id = "az">{{az}}</td>
+														</tr>
+														<tr>
+																<th scope = "row">Inclination</th>
+																<td>{{inclination}}</td>
+														</tr>
+														<tr>
+																<th scope = "row">Perigee Angle</th>
+																<td>{{perigee}}</td>
+														</tr>
+														<tr>
+																<th scope = "row">Eccentricity</th>
+																<td>{{eccentricity}}</td>
+														</tr>
+												</tbody>
+										</table>
+								</div>
+								<div class = "col">
+									<div id='map' style='width: 600px; height: 400px;'></div>
+											<script>
+												console.log({{coords[0][1]}})
+												mapboxgl.accessToken = 'pk.eyJ1IjoiYW5kcmV3Y3JhbXAiLCJhIjoiY2pvdmw4NzhoMThhczNrbzR4d2x0bGVhdyJ9.sc2tMk0EWnPkeCJWALbQ0g';
+												var map = new mapboxgl.Map({
+														container: 'map',
+														style: 'mapbox://styles/mapbox/dark-v10',
+														center: [0, 0],
+														zoom: -10
+												});
+												map.on('load', function() {
+												map.loadImage("https://i.imgur.com/rLUothC.png", function(error, image) {
+												if (error) throw error;
+														map.addImage("custom-marker", image);
 								/* Style layer: A style layer ties together the source and image and specifies how they are displayed on the map. */
-								map.addLayer({
-									id: "markers",
-									type: "symbol",
+												map.addLayer({
+												id: "markers",
+												type: "symbol",
 									/* Source: A data source specifies the geographic coordinate where the image marker gets placed. */
-									source: {
-									type: "geojson",
-									data: {
-									type: 'FeatureCollection',
-									features: [
-									{
-									type: 'Feature',
-									properties: {},
-									geometry: {
-									type: "Point",
-									coordinates: [{{lon}}, {{lat}}]
-									}
-									}
+												source: {
+												type: "geojson",
+												data: {
+												type: 'FeatureCollection',
+												features: [
+												{
+												type: 'Feature',
+												properties: {},
+												geometry: {
+												type: "Point",
+												coordinates: [{{lon}}, {{lat}}]
+												}
+										}
 									]
 									}
 									},
 									layout: {
 									"icon-image": "custom-marker",
+									}
+									});
+								});
+												map.loadImage("https://i.imgur.com/iiutlNL.png", function(error, image) {
+												if (error) throw error;
+														map.addImage("location", image);
+								/* Style layer: A style layer ties together the source and image and specifies how they are displayed on the map. */
+												map.addLayer({
+												id: "observer",
+												type: "symbol",
+									/* Source: A data source specifies the geographic coordinate where the image marker gets placed. */
+												source: {
+												type: "geojson",
+												data: {
+												type: 'FeatureCollection',
+												features: [
+												{
+												type: 'Feature',
+												properties: {},
+												geometry: {
+												type: "Point",
+												coordinates: [{{longg}}, {{latg}}]
+												}
+										}
+									]
+									}
+									},
+									layout: {
+									"icon-image": "location",
 									}
 									});
 								});
@@ -106,6 +192,10 @@
 										}
 								});
 						});
-				</script>
+		</script>
+								</div>
+						</div>
+				</div>
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 		</body>
 </html>
