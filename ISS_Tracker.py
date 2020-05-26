@@ -381,8 +381,8 @@ def home():
     return render_template("index.html", elev = round(elevation,5), az = round(azimuth,5), lat = round(latitude,5), lon = round(longitude,5), latg = round(cityCoord[0]*180/math.pi,5), longg = round(cityCoord[1]*180/math.pi,5), coords = coordinates,coords2 = coordinates2, inclination = round(inclination*180/math.pi,5), perigee = round(perigee*180/math.pi,5), eccentricity = round(eccentricity,5))
 
 
-@app.route("/Update", methods = ["Get","POST"])
-def update():
+@app.route("/Update/<lat>/<lon>", methods = ["Get","POST"])
+def update(lat, lon):
     elevation = 0
     azimuth = 0
     lAngle = 0
@@ -392,8 +392,9 @@ def update():
     ISSCoord = ISSCoord*(math.pi/180)
     latitude = ISSCoord[0]*180/math.pi
     longitude = ISSCoord[1]*180/math.pi
-    cityCoord = [observeLat,observeLon]
-    lAngle = lookAngle(cityCoord[0],cityCoord[1],ISSCoord[0],ISSCoord[1])
+    cityCoord = [float(lat),float(lon)]
+    print(cityCoord)
+    lAngle = lookAngle(cityCoord[0]*math.pi/180,cityCoord[1]*math.pi/180,ISSCoord[0],ISSCoord[1])
     elevation = lAngle[0]
     azimuth = lAngle[1]
     print(lAngle)

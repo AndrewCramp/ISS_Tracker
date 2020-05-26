@@ -12,7 +12,7 @@
 				function update_values() {
 
 						$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
-						$.getJSON($SCRIPT_ROOT+"/Update",
+						$.getJSON($SCRIPT_ROOT+"/Update/"+$("#latitude").val()+"/"+$("#longitude").val(),
 								function(data) {
 										console.log("fdsafdsaf;");
 										$("#lat").text(data.lat)
@@ -30,7 +30,7 @@
 										<form action = "" method = "post">
 										<label>Latitude</label>
 										<input type ="text" id = "latitude" class = "form-control" name = "latitude" value = {{latg}}><br>
-										<label>Latitude</label>
+										<label>Longitude</label>
 										<input type ="text" id = "longitude" name = "longitude" class = "form-control" value = {{longg}}><br>
 										<input type ="submit" class = "btn btn-primary" value = "Submit">
 										</form>
@@ -192,9 +192,6 @@
 										}
 								});
 								var request = new XMLHttpRequest();
-								var x = 3412343;
-								alert(x);
-								console.log("")
 								window.setInterval(function(){
 									request.open('GET',url,true);
 									request.onload = function (){
