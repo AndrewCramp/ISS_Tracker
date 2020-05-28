@@ -217,6 +217,38 @@
 		</script>
 								</div>
 						</div>
+						<div class = "row">
+								<div class = "col">
+										<label>ISS Passes</label>
+										<label>{{passes}}</label>
+										<table class ="table table-sm table-striped">
+												<thead>
+														<tr>
+																<th scope = "row"></th>
+																<td>Date</td>
+																<td>Start Time</td>
+																<td>Start Azimuth</td>
+																<td>End Azimuth</td>
+																<td>End Time</td>
+
+														</tr>
+												</thead>
+												<tbody>
+														{%for i in range(0,passes)%}
+														<tr>
+																<th scope = "row">{{i}}</th>
+																<td>{{date[i]}}</date>
+																<td id = 'sTime'>{{startTime[i]}}</td>
+																<td id = 'sAzimuth'>{{startAzimuth[i]}}</td>
+																<td id = 'eAzimuth'>{{endAzimuth[i]}}</td>
+																<td id = 'pTime'>{{endTime[i]}}</td>
+														</tr>
+														{%endfor%}
+												</tbody>
+										</table>
+								</div>
+
+						</div>
 				</div>
 		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 		</body>

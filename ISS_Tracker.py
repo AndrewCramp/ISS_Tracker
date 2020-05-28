@@ -26,7 +26,12 @@ meanMotion = 0.0
 daysInMonth = [31, 29, 31, 30, 31, 30, 31, 31,  30, 31, 30, 31]
 observeLat = 0
 observeLon = 0
-
+date = np.empty(50,dtype = 'object')
+startTime = np.empty(50,dtype = 'object' )
+startAzimuth = np.zeros(50)
+endTime = np.zeros(50, dtype = 'object')
+endAzimuth= np.zeros(50)
+passes = 0
 
 LATITUDECORRECTION = [["SE","SW"],
                         ["NE","NW"]]
@@ -234,26 +239,53 @@ def getFuturePosition(hours):
     pos = [lat*180/math.pi, lon]
     return pos
 
-def plotLine():
+def plotLine(observerLat,observerLon):
     global coordinates
     global coordinates2
+    global passes
+    global startTime
+    global startAzimuth
+    global endAzimuth
+    global endTime
+    satPass = False;
     lat = []
     lon = []
     lat2 = []
     lon2 = []
     switch = 0
     tempp = 5000
-    for i in range(1800):
+    for i in range(36000):
         temp = getFuturePosition(i*8.33e-4)
-        if abs(temp[1] - tempp) > 15 and tempp != 5000:
-            switch = 1
-        if switch == 0:
-            lat.append(float(temp[0]))
-            lon.append(float(temp[1]))
-            tempp = temp[1]
-        else:
-            lat2.append(float(temp[0]))
-            lon2.append(float(temp[1]))
+        angle = lookAngle(observerLat, observerLon, temp[0]*math.pi/180,temp[1]*math.pi/180)
+        startTimeTemp = 0;
+        if i < 1800:
+            if abs(temp[1] - tempp) > 15 and tempp != 5000:
+                switch = 1
+            if switch == 0:
+                lat.append(float(temp[0]))
+                lon.append(float(temp[1]))
+                tempp = temp[1]
+            else:
+                lat2.append(float(temp[0]))
+                lon2.append(float(temp[1]))
+        if  angle[0] > 3 and satPass != True:
+            date_time = dt.datetime.now()
+            date_time = date_time + dt.timedelta(hours=i*8.33e-4)
+            date[passes] = date_time.strftime("%Y/%m/%d")
+            startTime[passes] = date_time.strftime("%H:%M:%S")
+            satPass = True
+            startAzimuth[passes] = angle[1]
+            startTimeTemp = float(i*8.33e-4)
+        if satPass == True and angle[0] < 0:
+            satPass = False
+         #   passTime[passes] = i*8.33e-4-startTimeTemp
+            endAzimuth[passes] = angle[1]
+         #   if(passTime[passes] > 0.016666667): 
+          #  passTime[passes] = passTime[passes] * 60
+            date_time = dt.datetime.now()
+            date_time = date_time + dt.timedelta(hours=i*8.33e-4)
+            endTime[passes] = date_time.strftime("%H:%M:%S")
+            passes = passes + 1
     lonArray = np.array(lon)
     latArray = np.array(lat)
     lon2Array = np.array(lon2)
@@ -359,6 +391,8 @@ app = Flask(__name__)
 def home():
     global observLat
     global observeLon
+    global passes
+    passes = 0
     elevation = 0
     azimuth = 0
     lAngle = 0
@@ -370,7 +404,6 @@ def home():
     location = getFuturePosition(0)
     latitude = location[0]
     longitude = location[1]
-    plotLine()
     if request.method == "POST":
         cityCoord = [float(request.form["latitude"])*math.pi/180, float(request.form["longitude"])*math.pi/180]
         observeLat = float(request.form["latitude"])*math.pi/180
@@ -378,7 +411,8 @@ def home():
         lAngle = lookAngle(cityCoord[0],cityCoord[1],ISSCoord[0],ISSCoord[1])
         elevation = lAngle[0]
         azimuth = lAngle[1]
-    return render_template("index.html", elev = round(elevation,5), az = round(azimuth,5), lat = round(latitude,5), lon = round(longitude,5), latg = round(cityCoord[0]*180/math.pi,5), longg = round(cityCoord[1]*180/math.pi,5), coords = coordinates,coords2 = coordinates2, inclination = round(inclination*180/math.pi,5), perigee = round(perigee*180/math.pi,5), eccentricity = round(eccentricity,5))
+    plotLine(cityCoord[0],cityCoord[1])
+    return render_template("index.html",passes = passes,startTime = startTime, date = date,startAzimuth = startAzimuth,endTime = endTime,endAzimuth = endAzimuth, elev = round(elevation,5), az = round(azimuth,5), lat = round(latitude,5), lon = round(longitude,5), latg = round(cityCoord[0]*180/math.pi,5), longg = round(cityCoord[1]*180/math.pi,5), coords = coordinates,coords2 = coordinates2, inclination = round(inclination*180/math.pi,5), perigee = round(perigee*180/math.pi,5), eccentricity = round(eccentricity,5))
 
 
 @app.route("/Update/<lat>/<lon>", methods = ["Get","POST"])
