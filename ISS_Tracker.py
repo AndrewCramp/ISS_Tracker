@@ -99,7 +99,7 @@ def getAzimuth(sector, alpha):
         return 180 - alpha
 
 
-def getTLE():
+def getTLE(satellite_id):
     global epochTime
     global epochAnomaly
     global inclination
@@ -107,15 +107,15 @@ def getTLE():
     global ascendingNode
     global meanMotion
     global eccentricity
-    data = requests.get('https://www.n2yo.com/rest/v1/satellite/tle/25544&apiKey=C3LD4X-SJY6XX-HDLDBW-4DIZ')
+    data = requests.get(f'https://data.ivanstanojevic.me/api/tle/{satellite_id}')
+    print(f'https://data.ivanstanojevic.me/api/tle/{satellite_id}')
     tle = [' ',' ']
-    temp = data.json()['tle'].split('\r\n')
-    tle[0] = temp[0]
-    tle[1] = temp[1]
+    tle[0] = data.json()['line1']
+    tle[1] = data.json()['line2']
     inclination = float(tle[1][9:16])*math.pi/180.0
     ascendingNode = float(tle[1][17:25])*math.pi/180.0
     perigee = float(tle[1][34:42])*math.pi/180.0
-    epochTime = float(tle[0][20:32])
+    epochTime = float(tle[0][19:32])
     epochAnomaly = float(tle[1][43:51])*math.pi/180.0
     meanMotion = float(tle[1][52:63])
     eccentricity = float(tle[1][26:33])/10000000
@@ -392,6 +392,7 @@ def home():
     global observLat
     global observeLon
     global passes
+    satellite_id = "25544"
     passes = 0
     elevation = 0
     azimuth = 0
@@ -400,7 +401,7 @@ def home():
     cityCoord = [0.0,0.0]
     ISSCoord = getISSData()
     ISSCoord = ISSCoord*(math.pi/180)
-    getTLE()
+    getTLE(satellite_id)
     location = getFuturePosition(0)
     latitude = location[0]
     longitude = location[1]
@@ -408,11 +409,18 @@ def home():
         cityCoord = [float(request.form["latitude"])*math.pi/180, float(request.form["longitude"])*math.pi/180]
         observeLat = float(request.form["latitude"])*math.pi/180
         observeLon = float(request.form["longitude"])*math.pi/180
+        new_id = request.form["satellite_id"]
+        if(new_id != satellite_id):
+            satellite_id = new_id
+            getTLE(satellite_id)
+            location = getFuturePosition(0)
+            latitude = location[0]
+            longitude = location[1]
         lAngle = lookAngle(cityCoord[0],cityCoord[1],ISSCoord[0],ISSCoord[1])
         elevation = lAngle[0]
         azimuth = lAngle[1]
     plotLine(cityCoord[0],cityCoord[1])
-    return render_template("index.html",passes = passes,startTime = startTime, date = date,startAzimuth = startAzimuth,endTime = endTime,endAzimuth = endAzimuth, elev = round(elevation,5), az = round(azimuth,5), lat = round(latitude,5), lon = round(longitude,5), latg = round(cityCoord[0]*180/math.pi,5), longg = round(cityCoord[1]*180/math.pi,5), coords = coordinates,coords2 = coordinates2, inclination = round(inclination*180/math.pi,5), perigee = round(perigee*180/math.pi,5), eccentricity = round(eccentricity,5))
+    return render_template("index.html",passes = passes,startTime = startTime, date = date,startAzimuth = startAzimuth,endTime = endTime,endAzimuth = endAzimuth, elev = round(elevation,5), az = round(azimuth,5), lat = round(latitude,5), lon = round(longitude,5), sat_id = satellite_id, latg = round(cityCoord[0]*180/math.pi,5), longg = round(cityCoord[1]*180/math.pi,5), coords = coordinates,coords2 = coordinates2, inclination = round(inclination*180/math.pi,5), perigee = round(perigee*180/math.pi,5), eccentricity = round(eccentricity,5))
 
 
 @app.route("/Update/<lat>/<lon>", methods = ["Get","POST"])

@@ -14,7 +14,6 @@
 						$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
 						$.getJSON($SCRIPT_ROOT+"/Update/"+$("#latitude").val()+"/"+$("#longitude").val(),
 								function(data) {
-										console.log("fdsafdsaf;");
 										$("#lat").text(data.lat)
 										$("#lon").text(data.lon)
 										$("#elev").text(data.elev)
@@ -32,6 +31,8 @@
 										<input type ="text" id = "latitude" class = "form-control" name = "latitude" value = {{latg}}><br>
 										<label>Longitude</label>
 										<input type ="text" id = "longitude" name = "longitude" class = "form-control" value = {{longg}}><br>
+										<label>Satellite Number</label>
+										<input type ="text" id = "satellite_id" name = "satellite_id" class = "form-control" value = {{sat_id}}><br>
 										<input type ="submit" class = "btn btn-primary" value = "Submit">
 										</form>
 								</div>
