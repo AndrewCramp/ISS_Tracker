@@ -1,0 +1,9 @@
+Flask==1.1.2
+Flask-SocketIO==4.3.1
+julian==0.14
+mapbox==0.18.0
+matplotlib==3.2.1
+numpy==1.18.3
+pandas==1.0.3
+polyline==1.4.0
+requests==2.22.0
