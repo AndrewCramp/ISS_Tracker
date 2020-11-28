@@ -12,7 +12,7 @@
 				function update_values() {
 
 						$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
-						$.getJSON($SCRIPT_ROOT+"/Update/"+$("#latitude").val()+"/"+$("#longitude").val(),
+						$.getJSON($SCRIPT_ROOT+"/Update",
 								function(data) {
 										$("#lat").text(data.lat)
 										$("#lon").text(data.lon)
@@ -77,7 +77,7 @@
 								<div class = "col">
 									<div id='map' style='width: 600px; height: 400px;'></div>
 											<script>
-												var url = 'http://127.0.0.1:5000/Update';
+												var url = 'http://localhost:5000/Update';
 												mapboxgl.accessToken = 'pk.eyJ1IjoiYW5kcmV3Y3JhbXAiLCJhIjoiY2pvdmw4NzhoMThhczNrbzR4d2x0bGVhdyJ9.sc2tMk0EWnPkeCJWALbQ0g';
 												var map = new mapboxgl.Map({
 														container: 'map',
@@ -144,32 +144,24 @@
 									}
 									});
 								});
-								map.addSource('route', {
+								var counter = 0;
+								{% for coord in coords %}
+										counter = counter + 1;
+																									map.addSource('route'+counter, {
 										'type': 'geojson',
 										'data': {
 												'type': 'Feature',
 												'properties': {},
 												'geometry': {
 														'type': 'LineString',
-														'coordinates': {{coords}}
-												}
-										}
-								});
-								map.addSource('route2', {
-										'type': 'geojson',
-										'data': {
-												'type': 'Feature',
-												'properties': {},
-												'geometry': {
-														'type': 'LineString',
-														'coordinates': {{coords2}}
-												}
-										}
-								});
-								map.addLayer({
-										'id': 'route',
+														'coordinates': {{coord}}
+												},
+										},
+									});
+									map.addLayer({
+																						'id': 'route'+counter,
 										'type': 'line',
-										'source': 'route',
+																						'source': 'route'+counter,
 										'layout': {
 												'line-join': 'round',
 												'line-cap': 'round'
@@ -178,27 +170,14 @@
 												'line-color': '#888',
 												'line-width': 2
 										}
-								});
-								map.addLayer({
-										'id': 'route2',
-										'type': 'line',
-										'source': 'route2',
-										'layout': {
-												'line-join': 'round',
-												'line-cap': 'round'
-										},
-										'paint': {
-												'line-color': '#888',
-												'line-width': 2
-										}
-								});
+									});
+								{% endfor %}
 								var request = new XMLHttpRequest();
 								window.setInterval(function(){
 									request.open('GET',url,true);
 									request.onload = function (){
 										if(this.status >= 200 && this.status < 400){
 											var json = JSON.parse(this.response);
-											console.log("jlkjljldjfladsjf");
 											map.getSource('markers').setData({				type: 'FeatureCollection',
 															features: [
 															{
