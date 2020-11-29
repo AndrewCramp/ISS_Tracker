@@ -1,235 +1,284 @@
 <html>
-		<head>
+	<head>
 
-				<link href="https://stackpath.bootstrapcdn.com/bootswatch/4.5.0/darkly/bootstrap.min.css" rel="stylesheet" integrity="sha384-Bo21yfmmZuXwcN/9vKrA5jPUMhr7znVBBeLxT9MA4r2BchhusfJ6+n8TLGUcRAtL" crossorigin="anonymous">
-				<script src='https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.js'></script>
-				<link href='https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.css' rel='stylesheet' />
-				<title>ISS Tracker</title>
-		</head>
-		<body>
-				<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script> <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-		<script>
-				function update_values() {
+		<link href="https://stackpath.bootstrapcdn.com/bootswatch/4.5.0/darkly/bootstrap.min.css" rel="stylesheet" integrity="sha384-Bo21yfmmZuXwcN/9vKrA5jPUMhr7znVBBeLxT9MA4r2BchhusfJ6+n8TLGUcRAtL" crossorigin="anonymous">
+		<script src='https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.js'></script>
+		<link href='https://api.mapbox.com/mapbox-gl-js/v1.8.1/mapbox-gl.css' rel='stylesheet' />
+		<title>ISS Tracker</title>
+	</head>
+	<body>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script> <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+	<script>
+		function update_values() {
 
-						$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
-						$.getJSON($SCRIPT_ROOT+"/Update",
-								function(data) {
-										$("#lat").text(data.lat)
-										$("#lon").text(data.lon)
-										$("#elev").text(data.elev)
-										$("#az").text(data.az)
+			$SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+			$.getJSON($SCRIPT_ROOT+"/Update",
+				function(data) {
+					$("#lat").text(data.lat)
+					$("#lon").text(data.lon)
+					$("#elev").text(data.elev)
+					$("#az").text(data.az)
 
-							});
-				}
-				setInterval(update_values, 500);
-		</script>
-				<div class = "container">
-						<div class = "row">
-								<div class = "col-lg-">
-										<form action = "" method = "post">
-										<label>Latitude</label>
-										<input type ="text" id = "latitude" class = "form-control" name = "latitude" value = {{latg}}><br>
-										<label>Longitude</label>
-										<input type ="text" id = "longitude" name = "longitude" class = "form-control" value = {{longg}}><br>
-										<label>Satellite Number</label>
-										<input type ="text" id = "satellite_id" name = "satellite_id" class = "form-control" value = {{sat_id}}><br>
-										<input type ="submit" class = "btn btn-primary" value = "Submit">
-										</form>
-								</div>
-								<div class = "col">
-										<table class ="table table-sm table-striped">
-												<thead>
-														<tr>
-														</tr>
-												</thead>
-												<tbody>
-														<tr>
-																<th scope = "row">Satellite Latitude</th>
-																<td id = 'lat'>{{lat}}</td>
-														</tr>
-														<tr>
-																<th scope = "row">Satellite Longitude</th>
-																<td id = lon>{{lon}}</td>
-														</tr>
-														<tr>
-																<th scope = "row">Elevation</th>
-																<td id = elev>{{elev}}</td>
-														</tr>
-														<tr>
-																<th scope = "row">Azimuth</th>
-																<td id = "az">{{az}}</td>
-														</tr>
-														<tr>
-																<th scope = "row">Inclination</th>
-																<td>{{inclination}}</td>
-														</tr>
-														<tr>
-																<th scope = "row">Perigee Angle</th>
-																<td>{{perigee}}</td>
-														</tr>
-														<tr>
-																<th scope = "row">Eccentricity</th>
-																<td>{{eccentricity}}</td>
-														</tr>
-												</tbody>
-										</table>
-								</div>
-								<div class = "col">
-									<div id='map' style='width: 600px; height: 400px;'></div>
-											<script>
-												var url = 'http://localhost:5000/Update';
-												mapboxgl.accessToken = 'pk.eyJ1IjoiYW5kcmV3Y3JhbXAiLCJhIjoiY2pvdmw4NzhoMThhczNrbzR4d2x0bGVhdyJ9.sc2tMk0EWnPkeCJWALbQ0g';
-												var map = new mapboxgl.Map({
-														container: 'map',
-														style: 'mapbox://styles/mapbox/dark-v10',
-														center: [0, 0],
-														zoom: -10
-												});
-												map.on('load', function() {
-												map.loadImage("https://i.imgur.com/rLUothC.png", function(error, image) {
-												if (error) throw error;
-														map.addImage("custom-marker", image);
-								/* Style layer: A style layer ties together the source and image and specifies how they are displayed on the map. */
-												map.addLayer({
-												id: "markers",
-												type: "symbol",
-									/* Source: A data source specifies the geographic coordinate where the image marker gets placed. */
-												source: {
-												type: "geojson",
-												data: {
-												type: 'FeatureCollection',
-												features: [
-												{
-												type: 'Feature',
-												properties: {},
-												geometry: {
-												type: "Point",
-												coordinates: [{{lon}}, {{lat}}]
-												}
-										}
-									]
-									}
-									},
-									layout: {
-									"icon-image": "custom-marker",
-									}
-									});
-								});
-												map.loadImage("https://i.imgur.com/iiutlNL.png", function(error, image) {
-												if (error) throw error;
-														map.addImage("location", image);
-								/* Style layer: A style layer ties together the source and image and specifies how they are displayed on the map. */
-												map.addLayer({
-												id: "observer",
-												type: "symbol",
-									/* Source: A data source specifies the geographic coordinate where the image marker gets placed. */
-												source: {
-												type: "geojson",
-												data: {
-												type: 'FeatureCollection',
-												features: [
-												{
-												type: 'Feature',
-												properties: {},
-												geometry: {
-												type: "Point",
-												coordinates: [{{longg}}, {{latg}}]
-												}
-										}
-									]
-									}
-									},
-									layout: {
-									"icon-image": "location",
-									}
-									});
-								});
-								var counter = 0;
-								{% for coord in coords %}
-										counter = counter + 1;
-																									map.addSource('route'+counter, {
-										'type': 'geojson',
-										'data': {
-												'type': 'Feature',
-												'properties': {},
-												'geometry': {
-														'type': 'LineString',
-														'coordinates': {{coord}}
-												},
-										},
-									});
-									map.addLayer({
-																						'id': 'route'+counter,
-										'type': 'line',
-																						'source': 'route'+counter,
-										'layout': {
-												'line-join': 'round',
-												'line-cap': 'round'
-										},
-										'paint': {
-												'line-color': '#888',
-												'line-width': 2
-										}
-									});
-								{% endfor %}
-								var request = new XMLHttpRequest();
-								window.setInterval(function(){
-									request.open('GET',url,true);
-									request.onload = function (){
-										if(this.status >= 200 && this.status < 400){
-											var json = JSON.parse(this.response);
-											map.getSource('markers').setData({				type: 'FeatureCollection',
-															features: [
-															{
-															type: 'Feature',
-															properties: {},
-															geometry: {
-															type: "Point",
-															coordinates: [json.lon, json.lat]
-															}
-													}
-												]});
-										}
-									}
-									request.send();
-								},10000)
-						});
-		</script>
-								</div>
-						</div>
-						<div class = "row">
-								<div class = "col">
-										<label>ISS Passes</label>
-										<label>{{passes}}</label>
-										<table class ="table table-sm table-striped">
-												<thead>
-														<tr>
-																<th scope = "row"></th>
-																<td>Date</td>
-																<td>Start Time</td>
-																<td>Start Azimuth</td>
-																<td>End Azimuth</td>
-																<td>End Time</td>
-
-														</tr>
-												</thead>
-												<tbody>
-														{%for i in range(0,passes)%}
-														<tr>
-																<th scope = "row">{{i}}</th>
-																<td>{{date[i]}}</date>
-																<td id = 'sTime'>{{startTime[i]}}</td>
-																<td id = 'sAzimuth'>{{startAzimuth[i]}}</td>
-																<td id = 'eAzimuth'>{{endAzimuth[i]}}</td>
-																<td id = 'pTime'>{{endTime[i]}}</td>
-														</tr>
-														{%endfor%}
-												</tbody>
-										</table>
-								</div>
-
-						</div>
+				});
+		}
+		setInterval(update_values, 500);
+	</script>
+		<div class = "container">
+			<div class = "row">
+				<div class = "col-lg-">
+					<form action = "" method = "post">
+					<label>Latitude</label>
+					<input type ="text" id = "latitude" class = "form-control" name = "latitude" value = {{latg}}><br>
+					<label>Longitude</label>
+					<input type ="text" id = "longitude" name = "longitude" class = "form-control" value = {{longg}}><br>
+					<label>Satellite Number</label>
+					<input type ="text" id = "satellite_id" name = "satellite_id" class = "form-control" value = {{sat_id}}><br>
+					<input type ="submit" class = "btn btn-primary" value = "Submit">
+					</form>
 				</div>
-		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
-		</body>
+				<div class = "col">
+					<table class ="table table-sm table-striped">
+						<thead>
+							<tr>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<th scope = "row">Satellite Latitude</th>
+								<td id = 'lat'>{{lat}}</td>
+							</tr>
+							<tr>
+								<th scope = "row">Satellite Longitude</th>
+								<td id = lon>{{lon}}</td>
+							</tr>
+							<tr>
+								<th scope = "row">Elevation</th>
+								<td id = elev>{{elev}}</td>
+							</tr>
+							<tr>
+								<th scope = "row">Azimuth</th>
+								<td id = "az">{{az}}</td>
+							</tr>
+							<tr>
+								<th scope = "row">Inclination</th>
+								<td>{{inclination}}</td>
+							</tr>
+							<tr>
+								<th scope = "row">Perigee Angle</th>
+								<td>{{perigee}}</td>
+							</tr>
+							<tr>
+								<th scope = "row">Eccentricity</th>
+								<td>{{eccentricity}}</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div class = "col">
+					<div id='map' style='width: 600px; height: 400px;'></div>
+						<script>
+						var url = 'http://localhost:5000/Update';
+						mapboxgl.accessToken = 'pk.eyJ1IjoiYW5kcmV3Y3JhbXAiLCJhIjoiY2pvdmw4NzhoMThhczNrbzR4d2x0bGVhdyJ9.sc2tMk0EWnPkeCJWALbQ0g';
+						var map = new mapboxgl.Map({
+							container: 'map',
+							style: 'mapbox://styles/mapbox/dark-v10',
+							center: [0, 0],
+							zoom: -10
+						});
+						map.on('load', function() {
+						map.loadImage("https://i.imgur.com/rLUothC.png", function(error, image) {
+						if (error) throw error;
+							map.addImage("custom-marker", image);
+				/* Style layer: A style layer ties together the source and image and specifies how they are displayed on the map. */
+						map.addLayer({
+						id: "markers",
+						type: "symbol",
+					/* Source: A data source specifies the geographic coordinate where the image marker gets placed. */
+						source: {
+						type: "geojson",
+						data: {
+						type: 'FeatureCollection',
+						features: [
+						{
+						type: 'Feature',
+						properties: {},
+						geometry: {
+						type: "Point",
+						coordinates: [{{lon}}, {{lat}}]
+						}
+					}
+					]
+					}
+					},
+					layout: {
+					"icon-image": "custom-marker",
+					}
+					});
+				});
+						map.loadImage("https://i.imgur.com/iiutlNL.png", function(error, image) {
+						if (error) throw error;
+							map.addImage("location", image);
+						map.addLayer({
+						id: "observer",
+						type: "symbol",
+						source: {
+						type: "geojson",
+						data: {
+						type: 'FeatureCollection',
+						features: [
+						{
+						type: 'Feature',
+						properties: {},
+						geometry: {
+						type: "Point",
+						coordinates: [{{longg}}, {{latg}}]
+						}
+					}
+					]
+					}
+					},
+					layout: {
+					"icon-image": "location",
+					}
+					});
+				});
+				var counter = 0;
+				var time = 3;
+				var runningTotal = 0;
+				var previousTime = 0;
+				var propogationTime = document.getElementById("propogationDuration").value /60 ;
+				var request = new XMLHttpRequest();
+				{% for coord in coords %}
+					counter = counter + 1;
+					var coordinates_js = {{coord | tojson}};
+					if( coordinates_js.length*0.000833 + runningTotal < propogationTime){
+						coordinates_js = coordinates_js;
+					}else{
+						index = Math.floor((propogationTime - runningTotal) / 0.000833);
+						coordinates_js = coordinates_js.slice(0, index);
+					}
+					runningTotal = runningTotal + coordinates_js.length*0.000833;
+					map.addSource('route'+counter, {
+					'type': 'geojson',
+					'data': {
+						'type': 'Feature',
+						'properties': {},
+						'geometry': {
+							'type': 'LineString',
+							'coordinates': coordinates_js
+						},
+					},
+					});
+					map.addLayer({
+						'id': 'route'+counter,
+						'type': 'line',
+						'source': 'route'+counter,
+						'layout': {
+							'line-join': 'round',
+							'line-cap': 'round'
+						},
+						'paint': {
+							'line-color': '#888',
+							'line-width': 2
+						}
+					});
+				{% endfor %}
+				window.setInterval(function(){
+					request.open('GET',url,true);
+					request.onload = function (){
+					if(this.status >= 200 && this.status < 400){
+						counter = 0;
+						runningTotal = 0;
+						previousTime = 0;
+						var propogationTime = document.getElementById("propogationDuration").value / 60;
+						if(propogationTime != previousTime){
+							{% for coord in coords %}
+								counter = counter + 1;
+								var coordinates_js = {{coord | tojson}};
+								if( coordinates_js.length*0.000833 + runningTotal < propogationTime){
+									coordinates_js = coordinates_js;
+								}else{
+									index = Math.floor((propogationTime - runningTotal) / 0.000833);
+									coordinates_js = coordinates_js.slice(0, index);
+								}
+								runningTotal = runningTotal + coordinates_js.length*0.000833;
+								var data = {
+									'type': 'Feature',
+									'properties': {},
+									'geometry': {
+										'type': 'LineString',
+										'coordinates': coordinates_js,
+									},
+								};
+								map.getSource('route'+counter).setData(data);
+								previousTime = propogationTime;	
+							{% endfor %}
+						}
+						var json = JSON.parse(this.response);
+						map.getSource('markers').setData({type: 'FeatureCollection',
+								features: [
+								{
+								type: 'Feature',
+								properties: {},
+								geometry: {
+								type: "Point",
+								coordinates: [json.lon, json.lat]
+								}
+							}
+						]});
+					}
+					}
+					request.send();
+				},50)
+			});
+	</script>
+				</div>
+			</div>
+			<div class = "row">
+				<div class = "col"></div>
+				<div class = "col"></div>
+				<div class = "col-lg">
+					<form> 
+						<div class = "form-group">
+							<label for "propogationDuration">Propogation Duration</label>
+							<input type="range" class="form-control-range" id="propogationDuration" min="60" max ="1440">
+						</div>
+					</form>
+				</div>
+			</div>
+			<div class = "row">
+				<div class = "col">
+					<label>ISS Passes</label>
+					<label>{{passes}}</label>
+					<table class ="table table-sm table-striped">
+						<thead>
+							<tr>
+								<th scope = "row"></th>
+								<td>Date</td>
+								<td>Start Time</td>
+								<td>Start Azimuth</td>
+								<td>End Azimuth</td>
+								<td>End Time</td>
+
+							</tr>
+						</thead>
+						<tbody>
+							{%for i in range(0,passes)%}
+							<tr>
+								<th scope = "row">{{i}}</th>
+								<td>{{date[i]}}</date>
+								<td id = 'sTime'>{{startTime[i]}}</td>
+								<td id = 'sAzimuth'>{{startAzimuth[i]}}</td>
+								<td id = 'eAzimuth'>{{endAzimuth[i]}}</td>
+								<td id = 'pTime'>{{endTime[i]}}</td>
+							</tr>
+							{%endfor%}
+						</tbody>
+					</table>
+				</div>
+
+			</div>
+		</div>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+	</body>
 </html>
