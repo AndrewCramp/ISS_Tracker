@@ -1,4 +1,5 @@
 import json
+import settings
 import requests
 import math
 import numpy as np
@@ -234,8 +235,6 @@ def check_passes(coordinates, city_coords, a, retrival_time):
         count = count + 1
         coord.reverse()
         angle = lookAngle(city_coords, coord, a)
-        if angle [0] > -15:
-            print(f'{angle[0]}   {satPass}')
         coord.reverse()
         if  angle[0] > 0 and satPass != True:
             date_time = retrival_time

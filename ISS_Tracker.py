@@ -1,4 +1,5 @@
 import json
+import os
 from orbits import orbits
 import math
 import mapbox
@@ -10,7 +11,8 @@ from flask_cors import CORS
 from timezonefinder import TimezoneFinder
 import pytz
 tf = TimezoneFinder()
-geocoder = mapbox.Geocoder(access_token = 'pk.eyJ1IjoiYW5kcmV3Y3JhbXAiLCJhIjoiY2pvdmw4NzhoMThhczNrbzR4d2x0bGVhdyJ9.sc2tMk0EWnPkeCJWALbQ0g')
+geocoder = mapbox.Geocoder(access_token = os.getenv("MAP_BOX_KEY"))
+
 
 def getCityCoordinates():
     coordinates = np.array([0.0,0.0])
@@ -23,18 +25,25 @@ def getCityCoordinates():
 
 
 app = Flask(__name__)
-app.secret_key = 'asdfasdfy4etyrejtryjfghnmmnb.,,.n,m.n,m.jkl.hj'
+app.secret_key = os.getenv("SECRET_KEY")
 CORS(app, support_credentials=True)
 @app.route("/", methods = ["GET","POST"])
 def home():
     retrival_time_local = dt.datetime.now(orbits.utc)
     if session.get('satellite') == None:
-        session['user_coord'] = [0.0,0.0]
+        session['user_coord'] = [40.0,0.0]
         session['satellite_coord'] = [0.0,0.0]
         session['satellite'] = 25544
         session['tle'] = orbits.getTLE(session['satellite'])
-        timezone_str = tf.timezone_at(lng = session['user_coord'][1],lat = session['user_coord'][0])
-        timezone = pytz.timezone(timezone_str)
+        while True:
+             try:
+                 timezone_str = tf.timezone_at(lng = session['user_coord'][1],lat = session['user_coord'][0])
+                 timezone = pytz.timezone(timezone_str)
+             except:
+                 print("invalid timezone")
+                 session['user_coord'][0] = session['user_coord'][0] + 1
+                 continue
+             break
         session['retrival_time'] = j.to_jd(dt.datetime.now(orbits.utc), fmt='jd')
         retrival_time_local= dt.datetime.now(timezone)
     if request.method == "POST":
@@ -43,8 +52,16 @@ def home():
         if new_id != session['satellite']  or new_coords != session['user_coord']:
             session['satellite'] = new_id
             session['user_coord'] = new_coords
-            timezone_str = tf.timezone_at(lng = session['user_coord'][1],lat = session['user_coord'][0])
-            timezone = pytz.timezone(timezone_str)
+            while True:
+                try:
+                    timezone_str = tf.timezone_at(lng = session['user_coord'][1],lat = session['user_coord'][0])
+                    timezone = pytz.timezone(timezone_str)
+                except:
+                    print("invalid timezone")
+                    session['user_coord'][0] = session['user_coord'][0] + 1
+                    print(session['user_coord'][0])
+                    continue
+                break
             session['tle'] = orbits.getTLE(session['satellite'])
             session['retrival_time'] = j.to_jd(dt.datetime.now(orbits.utc), fmt='jd')
             retrival_time_local= dt.datetime.now(timezone)
@@ -84,4 +101,5 @@ def update():
     return jsonify(elev = round(elevation,2), az = round(azimuth,2), lat = round(session['satellite_coord'][0],2), lon = round(session['satellite_coord'][1],2), latg = round(session['user_coord'][0],2), longg = round(session['user_coord'][1],2))
 
 if (__name__ == "__main__"):
+    print(os.getenv("MAP_BOX_KEY"))
     app.run(host='localhost')
